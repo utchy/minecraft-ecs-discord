@@ -30,7 +30,7 @@ output "auto_shutdown_ecr_repository_url" {
 
 output "lambda_role_arn" {
   description = "The ARN of the Lambda IAM role"
-  value       = aws_iam_role.lambda.arn
+  value       = var.lambda_role_arn
 }
 
 output "lambda_security_group_id" {
