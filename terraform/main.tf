@@ -43,6 +43,8 @@ module "ecs" {
   minecraft_env_vars = var.minecraft_env_vars
   efs_id           = module.efs.efs_id
   mods_bucket_name = module.s3.mods_bucket_name
+  ecs_task_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  ecs_task_role_arn = module.iam.ecs_task_role_arn
 }
 
 # Lambda Functions for Discord Bot and Auto-shutdown
@@ -58,6 +60,7 @@ module "lambda" {
   discord_bot_token_parameter_name = var.discord_bot_token_parameter_name
   discord_channel_id_parameter_name = var.discord_channel_id_parameter_name
   auto_shutdown_time              = var.auto_shutdown_time
+  lambda_role_arn                 = module.iam.lambda_role_arn
 }
 
 # API Gateway for Discord Bot

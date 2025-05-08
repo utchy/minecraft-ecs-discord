@@ -48,91 +48,7 @@ resource "aws_security_group" "minecraft" {
   }
 }
 
-# IAM Role for ECS Task Execution
-resource "aws_iam_role" "ecs_task_execution" {
-  name = "${var.project_name}-ecs-task-execution"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "${var.project_name}-ecs-task-execution"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
-  role       = aws_iam_role.ecs_task_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# IAM Role for ECS Task
-resource "aws_iam_role" "ecs_task" {
-  name = "${var.project_name}-ecs-task"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "${var.project_name}-ecs-task"
-  }
-}
-
-# IAM Policy for ECS Task to access S3 and EFS
-resource "aws_iam_policy" "ecs_task" {
-  name        = "${var.project_name}-ecs-task-policy"
-  description = "Policy for ECS task to access S3 and EFS"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket",
-        ]
-        Effect   = "Allow"
-        Resource = [
-          "arn:aws:s3:::${var.mods_bucket_name}",
-          "arn:aws:s3:::${var.mods_bucket_name}/*"
-        ]
-      },
-      {
-        Action = [
-          "elasticfilesystem:ClientMount",
-          "elasticfilesystem:ClientWrite",
-          "elasticfilesystem:ClientRootAccess"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task" {
-  role       = aws_iam_role.ecs_task.name
-  policy_arn = aws_iam_policy.ecs_task.arn
-}
+# Using IAM roles from the IAM module
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "minecraft" {
@@ -141,15 +57,15 @@ resource "aws_ecs_task_definition" "minecraft" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.minecraft_cpu
   memory                   = var.minecraft_memory
-  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task.arn
+  execution_role_arn       = var.ecs_task_execution_role_arn
+  task_role_arn            = var.ecs_task_role_arn
 
   container_definitions = jsonencode([
     {
       name      = "minecraft"
       image     = var.minecraft_image
       essential = true
-      
+
       portMappings = [
         {
           containerPort = var.minecraft_port
@@ -157,14 +73,14 @@ resource "aws_ecs_task_definition" "minecraft" {
           protocol      = "tcp"
         }
       ]
-      
+
       environment = [
         for key, value in var.minecraft_env_vars : {
           name  = key
           value = value
         }
       ]
-      
+
       mountPoints = [
         {
           sourceVolume  = "minecraft-data"
@@ -172,7 +88,7 @@ resource "aws_ecs_task_definition" "minecraft" {
           readOnly      = false
         }
       ]
-      
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -186,7 +102,7 @@ resource "aws_ecs_task_definition" "minecraft" {
       name      = "mod-sync"
       image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${var.project_name}-mod-sync:latest"
       essential = false
-      
+
       environment = [
         {
           name  = "S3_BUCKET"
@@ -201,7 +117,7 @@ resource "aws_ecs_task_definition" "minecraft" {
           value = "300"  # 5 minutes
         }
       ]
-      
+
       mountPoints = [
         {
           sourceVolume  = "minecraft-mods"
@@ -209,7 +125,7 @@ resource "aws_ecs_task_definition" "minecraft" {
           readOnly      = false
         }
       ]
-      
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -223,7 +139,7 @@ resource "aws_ecs_task_definition" "minecraft" {
 
   volume {
     name = "minecraft-data"
-    
+
     efs_volume_configuration {
       file_system_id     = var.efs_id
       transit_encryption = "ENABLED"
@@ -236,7 +152,7 @@ resource "aws_ecs_task_definition" "minecraft" {
 
   volume {
     name = "minecraft-mods"
-    
+
     efs_volume_configuration {
       file_system_id     = var.efs_id
       transit_encryption = "ENABLED"

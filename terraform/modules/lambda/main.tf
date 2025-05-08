@@ -44,93 +44,7 @@ resource "aws_cloudwatch_log_group" "auto_shutdown" {
   }
 }
 
-# IAM Role for Lambda functions
-resource "aws_iam_role" "lambda" {
-  name = "${var.project_name}-lambda-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "${var.project_name}-lambda-role"
-  }
-}
-
-# IAM Policy for Lambda to access ECS, SSM, and CloudWatch
-resource "aws_iam_policy" "lambda" {
-  name        = "${var.project_name}-lambda-policy"
-  description = "Policy for Lambda functions to access ECS, SSM, and CloudWatch"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Effect   = "Allow"
-        Resource = [
-          aws_cloudwatch_log_group.discord_bot.arn,
-          "${aws_cloudwatch_log_group.discord_bot.arn}:*",
-          aws_cloudwatch_log_group.auto_shutdown.arn,
-          "${aws_cloudwatch_log_group.auto_shutdown.arn}:*"
-        ]
-      },
-      {
-        Action = [
-          "ecs:ListClusters",
-          "ecs:ListServices",
-          "ecs:ListTasks",
-          "ecs:DescribeClusters",
-          "ecs:DescribeServices",
-          "ecs:DescribeTasks",
-          "ecs:UpdateService"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-      {
-        Action = [
-          "ssm:GetParameter",
-          "ssm:GetParameters"
-        ]
-        Effect   = "Allow"
-        Resource = [
-          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.discord_bot_token_parameter_name}",
-          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.discord_channel_id_parameter_name}"
-        ]
-      },
-      {
-        Action = [
-          "ec2:DescribeNetworkInterfaces"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda" {
-  role       = aws_iam_role.lambda.name
-  policy_arn = aws_iam_policy.lambda.arn
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  role       = aws_iam_role.lambda.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
+# Using IAM role from the IAM module
 
 # Security Group for Lambda functions
 resource "aws_security_group" "lambda" {
@@ -153,7 +67,7 @@ resource "aws_security_group" "lambda" {
 # Discord Bot Lambda Function
 resource "aws_lambda_function" "discord_bot" {
   function_name = "${var.project_name}-discord-bot"
-  role          = aws_iam_role.lambda.arn
+  role          = var.lambda_role_arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.discord_bot.repository_url}:latest"
   timeout       = 30
@@ -186,7 +100,7 @@ resource "aws_lambda_function" "discord_bot" {
 # Auto-shutdown Lambda Function
 resource "aws_lambda_function" "auto_shutdown" {
   function_name = "${var.project_name}-auto-shutdown"
-  role          = aws_iam_role.lambda.arn
+  role          = var.lambda_role_arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.auto_shutdown.repository_url}:latest"
   timeout       = 30
