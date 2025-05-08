@@ -7,11 +7,13 @@ This document describes the architecture of the Minecraft ECS Discord project.
 ```mermaid
 flowchart TD
     Discord[Discord Bot] -->|Commands| ECS
-    S3[S3 Buckets\n(Mods/Backups)] <-->|Data| EFS
-    EFS[EFS\n(Storage)] <-->|Data| ECS
-    ECS[ECS Fargate\n(Minecraft)] -->|Trigger| Lambda
-    CloudWatch[CloudWatch\n(Scheduling)] -->|Schedule| ECS
-    Lambda[Lambda Functions\n(Auto-shutdown)]
+    S3[S3 Buckets<br>#40;Mods/Backups#41;] -->|Data| EFS
+    EFS[EFS<br>#40;Storage#41;] -->|Data| ECS
+    ECS[ECS Fargate<br>#40;Minecraft#41;] -->|Trigger| Lambda
+    CloudWatch[CloudWatch<br>#40;Scheduling#41;] -->|Schedule| ECS
+    Lambda[Lambda Functions<br>#40;Auto-shutdown#41;]
+    EFS -->|Data| S3
+    ECS -->|Data| EFS
 ```
 
 ## Components
