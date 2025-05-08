@@ -84,7 +84,7 @@ resource "aws_lambda_function" "discord_bot" {
       ECS_SERVICE_NAME = var.ecs_service_name
       DISCORD_BOT_TOKEN_PARAMETER = var.discord_bot_token_parameter_name
       DISCORD_CHANNEL_ID_PARAMETER = var.discord_channel_id_parameter_name
-      AWS_REGION = data.aws_region.current.name
+      CURRENT_REGION = data.aws_region.current.name
     }
   }
 
@@ -117,7 +117,7 @@ resource "aws_lambda_function" "auto_shutdown" {
       ECS_SERVICE_NAME = var.ecs_service_name
       DISCORD_BOT_TOKEN_PARAMETER = var.discord_bot_token_parameter_name
       DISCORD_CHANNEL_ID_PARAMETER = var.discord_channel_id_parameter_name
-      AWS_REGION = data.aws_region.current.name
+      CURRENT_REGION = data.aws_region.current.name
     }
   }
 
