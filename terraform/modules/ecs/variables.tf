@@ -70,3 +70,15 @@ variable "mods_bucket_name" {
   description = "Name of the S3 bucket for storing Minecraft mods"
   type        = string
 }
+
+variable "ecs_task_execution_role_arn" {
+  description = "The ARN of the ECS task execution IAM role"
+  type        = string
+  default     = null
+}
+
+variable "ecs_task_role_arn" {
+  description = "The ARN of the ECS task IAM role"
+  type        = string
+  default     = null
+}

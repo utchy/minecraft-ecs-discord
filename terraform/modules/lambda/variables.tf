@@ -42,3 +42,9 @@ variable "auto_shutdown_time" {
   description = "Time to automatically shut down the Minecraft server (cron expression in UTC)"
   type        = string
 }
+
+variable "lambda_role_arn" {
+  description = "The ARN of the Lambda IAM role"
+  type        = string
+  default     = null
+}

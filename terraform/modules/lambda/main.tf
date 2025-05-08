@@ -44,8 +44,10 @@ resource "aws_cloudwatch_log_group" "auto_shutdown" {
   }
 }
 
-# IAM Role for Lambda functions
+# IAM Role for Lambda functions - Only created if not provided via variable
 resource "aws_iam_role" "lambda" {
+  count = var.lambda_role_arn == null ? 1 : 0
+
   name = "${var.project_name}-lambda-role"
 
   assume_role_policy = jsonencode({
@@ -66,8 +68,10 @@ resource "aws_iam_role" "lambda" {
   }
 }
 
-# IAM Policy for Lambda to access ECS, SSM, and CloudWatch
+# IAM Policy for Lambda to access ECS, SSM, and CloudWatch - Only created if role is not provided
 resource "aws_iam_policy" "lambda" {
+  count = var.lambda_role_arn == null ? 1 : 0
+
   name        = "${var.project_name}-lambda-policy"
   description = "Policy for Lambda functions to access ECS, SSM, and CloudWatch"
 
@@ -123,12 +127,16 @@ resource "aws_iam_policy" "lambda" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda" {
-  role       = aws_iam_role.lambda.name
-  policy_arn = aws_iam_policy.lambda.arn
+  count = var.lambda_role_arn == null ? 1 : 0
+
+  role       = aws_iam_role.lambda[0].name
+  policy_arn = aws_iam_policy.lambda[0].arn
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  role       = aws_iam_role.lambda.name
+  count = var.lambda_role_arn == null ? 1 : 0
+
+  role       = aws_iam_role.lambda[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
@@ -153,7 +161,7 @@ resource "aws_security_group" "lambda" {
 # Discord Bot Lambda Function
 resource "aws_lambda_function" "discord_bot" {
   function_name = "${var.project_name}-discord-bot"
-  role          = aws_iam_role.lambda.arn
+  role          = var.lambda_role_arn != null ? var.lambda_role_arn : aws_iam_role.lambda[0].arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.discord_bot.repository_url}:latest"
   timeout       = 30
@@ -186,7 +194,7 @@ resource "aws_lambda_function" "discord_bot" {
 # Auto-shutdown Lambda Function
 resource "aws_lambda_function" "auto_shutdown" {
   function_name = "${var.project_name}-auto-shutdown"
-  role          = aws_iam_role.lambda.arn
+  role          = var.lambda_role_arn != null ? var.lambda_role_arn : aws_iam_role.lambda[0].arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.auto_shutdown.repository_url}:latest"
   timeout       = 30
