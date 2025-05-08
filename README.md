@@ -127,14 +127,6 @@ This setup is designed to be cost-effective:
 
 ## Troubleshooting
 
-For detailed troubleshooting steps, see the [Troubleshooting Guide](docs/troubleshooting.md).
-
-Common issues include:
-
-### EntityAlreadyExists Errors
-
-If you encounter errors like `EntityAlreadyExists` when running `make apply`, see the [Troubleshooting Guide](docs/troubleshooting.md#entityalreadyexists-errors) for solutions.
-
 ### Server Not Starting
 
 Check CloudWatch Logs for the ECS service:
